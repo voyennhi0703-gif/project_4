@@ -14,12 +14,50 @@ class HomeView extends StatefulWidget {
   State<HomeView> createState() => HomeViewState();
 }
 
-class HomeViewState extends State<HomeView> {
+class HomeViewState extends State<HomeView>
+    with SingleTickerProviderStateMixin {
   // State để lưu trữ mood data
   Map<String, dynamic>? savedMoodData;
 
   // State để theo dõi ngày được chọn
   DateTime? selectedDate;
+
+  late AnimationController _circleController;
+  late Animation<double> _scaleAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _circleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+    _scaleAnim = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween(
+          begin: 1.0,
+          end: 1.06,
+        ).chain(CurveTween(curve: Curves.easeOut)),
+        weight: 50,
+      ),
+      TweenSequenceItem(
+        tween: Tween(
+          begin: 1.06,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeIn)),
+        weight: 50,
+      ),
+    ]).animate(_circleController);
+
+    // Run continuously
+    _circleController.repeat();
+  }
+
+  @override
+  void dispose() {
+    _circleController.dispose();
+    super.dispose();
+  }
 
   void _openMoodTracker(BuildContext context, int currentCycleDay) {
     showModalBottomSheet(
@@ -58,8 +96,6 @@ class HomeViewState extends State<HomeView> {
       MaterialPageRoute(builder: (context) => const CalendarView()),
     );
   }
-
-  
 
   void _showTodayDetails(DataManager dataManager) {
     showDialog(
@@ -794,105 +830,108 @@ class HomeViewState extends State<HomeView> {
 
                               const SizedBox(height: 40),
 
-                              // Large circle section
-                              Container(
-                                width: 320,
-                                height: 320,
-                                decoration: BoxDecoration(
-                                  color: Colors.pink.shade200,
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.pink.withOpacity(0.3),
-                                      blurRadius: 20,
-                                      offset: const Offset(0, 10),
-                                    ),
-                                  ],
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      selectedDate != null
-                                          ? _getPredictionInfo(
-                                              selectedDate!,
-                                              dataManager,
-                                            )['phase']!
-                                          : (dataManager.cyclePhase.isNotEmpty
-                                                ? dataManager.cyclePhase
-                                                : 'Period:'),
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w400,
-                                        color: Colors.grey[600],
+                              // Large circle section with animation
+                              ScaleTransition(
+                                scale: _scaleAnim,
+                                child: Container(
+                                  width: 320,
+                                  height: 320,
+                                  decoration: BoxDecoration(
+                                    color: Colors.pink.shade200,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.pink.withOpacity(0.3),
+                                        blurRadius: 20,
+                                        offset: const Offset(0, 10),
                                       ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      selectedDate != null
-                                          ? _getPredictionInfo(
-                                              selectedDate!,
-                                              dataManager,
-                                            )['day']!
-                                          : (dataManager.startDate != null
-                                                ? 'Day ${dataManager.currentCycleDay}'
-                                                : 'Day 1'),
-                                      style: const TextStyle(
-                                        fontSize: 48,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Text(
-                                      selectedDate != null
-                                          ? _getPredictionInfo(
-                                              selectedDate!,
-                                              dataManager,
-                                            )['info']!
-                                          : dataManager.getPregnancyChance(),
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w400,
-                                        color: Colors.grey[600],
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    const SizedBox(height: 30),
-                                    GestureDetector(
-                                      onTap: () {
-                                        if (dataManager.startDate == null) {
-                                          _showOnboardingRedirect();
-                                        } else if (dataManager
-                                                .currentCycleDay <=
-                                            dataManager.periodDuration) {
-                                          _showEndCycleDialog(dataManager);
-                                        } else {
-                                          _showStartCycleDialog(dataManager);
-                                        }
-                                      },
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 20,
-                                          vertical: 10,
+                                    ],
+                                  ),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        selectedDate != null
+                                            ? _getPredictionInfo(
+                                                selectedDate!,
+                                                dataManager,
+                                              )['phase']!
+                                            : (dataManager.cyclePhase.isNotEmpty
+                                                  ? dataManager.cyclePhase
+                                                  : 'Period:'),
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w400,
+                                          color: Colors.grey[600],
                                         ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.pink.shade100,
-                                          borderRadius: BorderRadius.circular(
-                                            20,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        selectedDate != null
+                                            ? _getPredictionInfo(
+                                                selectedDate!,
+                                                dataManager,
+                                              )['day']!
+                                            : (dataManager.startDate != null
+                                                  ? 'Day ${dataManager.currentCycleDay}'
+                                                  : 'Day 1'),
+                                        style: const TextStyle(
+                                          fontSize: 48,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        selectedDate != null
+                                            ? _getPredictionInfo(
+                                                selectedDate!,
+                                                dataManager,
+                                              )['info']!
+                                            : dataManager.getPregnancyChance(),
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w400,
+                                          color: Colors.grey[600],
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      const SizedBox(height: 30),
+                                      GestureDetector(
+                                        onTap: () {
+                                          if (dataManager.startDate == null) {
+                                            _showOnboardingRedirect();
+                                          } else if (dataManager
+                                                  .currentCycleDay <=
+                                              dataManager.periodDuration) {
+                                            _showEndCycleDialog(dataManager);
+                                          } else {
+                                            _showStartCycleDialog(dataManager);
+                                          }
+                                        },
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 20,
+                                            vertical: 10,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.pink.shade100,
+                                            borderRadius: BorderRadius.circular(
+                                              20,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            "Edit period dates",
+                                            style: TextStyle(
+                                              color: Colors.pink.shade700,
+                                              fontWeight: FontWeight.w500,
+                                              fontSize: 14,
+                                            ),
                                           ),
                                         ),
-                                        child: Text(
-                                          "Edit period dates",
-                                          style: TextStyle(
-                                            color: Colors.pink.shade700,
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 14,
-                                          ),
-                                        ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ),
 
